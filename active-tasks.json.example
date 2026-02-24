@@ -11,7 +11,7 @@
   "config": {
     "maxParallelAgents": 2,
     "maxAttempts": 3,
-    "defaultModel": "claude-sonnet-4-20250514",
+    "defaultModel": "sonnet",
     "checkIntervalMinutes": 10,
     "notifyOnComplete": true,
     "notifyOnFailure": true,
