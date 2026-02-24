@@ -1,0 +1,17 @@
+# Runtime state (don't commit active task state)
+active-tasks.json
+active-tasks.lock
+
+# Logs (contain execution traces)
+logs/
+
+# Prompts (may contain sensitive project context)
+prompts/
+
+# Test artifacts
+test-results/
+*.tmp
+*.log
+
+# OS
+.DS_Store

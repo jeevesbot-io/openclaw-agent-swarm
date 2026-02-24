@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "tasks": [],
+  "history": [],
+  "stats": {
+    "totalTasks": 0,
+    "successRate": 0,
+    "avgCompletionMinutes": 0,
+    "totalCost": 0
+  },
+  "config": {
+    "maxParallelAgents": 2,
+    "maxAttempts": 3,
+    "defaultModel": "anthropic/claude-sonnet-4",
+    "checkIntervalMinutes": 10,
+    "notifyOnComplete": true,
+    "notifyOnFailure": true,
+    "notifyOnStuck": true
+  }
+}
