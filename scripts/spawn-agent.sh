@@ -61,9 +61,15 @@ if [ ! -d "$REPO_DIR/.git" ]; then
   exit 1
 fi
 
+# Resolve prompt file path (may be relative to swarm dir)
 if [ ! -f "$PROMPT_FILE" ]; then
-  echo "ERROR: Prompt file $PROMPT_FILE does not exist"
-  exit 1
+  # Try resolving relative to swarm directory
+  if [ -f "$HOME/.openclaw/swarm/$PROMPT_FILE" ]; then
+    PROMPT_FILE="$HOME/.openclaw/swarm/$PROMPT_FILE"
+  else
+    echo "ERROR: Prompt file $PROMPT_FILE does not exist"
+    exit 1
+  fi
 fi
 
 # Check if session already exists
@@ -72,19 +78,16 @@ if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
   exit 1
 fi
 
-# Check if worktree already exists
+# Clean up stale worktree/branch if they exist (from previous failed runs)
+cd "$REPO_DIR"
 if [ -d "$WORKTREE_DIR" ]; then
-  echo "ERROR: Worktree already exists at $WORKTREE_DIR"
-  echo "  Remove it first: cd $HOME/projects/$REPO && git worktree remove $WORKTREE_DIR"
-  exit 1
+  echo "⚠️  Cleaning up stale worktree at $WORKTREE_DIR"
+  git worktree remove "$WORKTREE_DIR" --force 2>/dev/null || rm -rf "$WORKTREE_DIR"
 fi
 
-# Check if branch already exists locally
-cd "$REPO_DIR"
 if git show-ref --verify --quiet "refs/heads/$BRANCH"; then
-  echo "ERROR: Branch $BRANCH already exists locally"
-  echo "  Delete it first: git branch -D $BRANCH"
-  exit 1
+  echo "⚠️  Cleaning up stale branch $BRANCH"
+  git branch -D "$BRANCH" 2>/dev/null || true
 fi
 
 # Check available disk space (need at least 1GB)
@@ -173,18 +176,12 @@ fi
 PROMPT_SIZE=$(wc -c < "$PROMPT_FILE")
 echo "Prompt size: $PROMPT_SIZE bytes"
 
-# Check if prompt is too large for shell argument (>100KB as safe limit)
-if [ "$PROMPT_SIZE" -gt 102400 ]; then
-  echo "⚠️  Large prompt detected (>100KB), using file-based approach"
-  # Copy prompt to worktree
-  WORKTREE_PROMPT="$WORKTREE_DIR/.claude-prompt.txt"
-  cp "$PROMPT_FILE" "$WORKTREE_PROMPT"
-  PROMPT_METHOD="file"
-else
-  # Escape quotes for shell
-  PROMPT_CONTENT=$(cat "$PROMPT_FILE" | sed "s/'/'\\\\''/g")
-  PROMPT_METHOD="inline"
-fi
+# Always use file-based approach for reliability
+# Inline prompt breaks with single quotes, backticks, and special chars
+echo "Copying prompt to worktree (file-based execution)"
+WORKTREE_PROMPT="$WORKTREE_DIR/.claude-prompt.txt"
+cp "$PROMPT_FILE" "$WORKTREE_PROMPT"
+PROMPT_METHOD="file"
 
 # Create the tmux session with Claude Code
 echo "Spawning Claude Code agent in tmux session: $TMUX_SESSION"
@@ -199,14 +196,9 @@ if [ -n "$VENV_PATH" ]; then
   tmux send-keys -t "$TMUX_SESSION" "source $VENV_PATH" C-m
 fi
 
-# Send Claude command based on prompt size
-if [ "$PROMPT_METHOD" = "file" ]; then
-  # Use heredoc to avoid shell argument limits
-  tmux send-keys -t "$TMUX_SESSION" "claude --model sonnet --dangerously-skip-permissions \"\$(cat .claude-prompt.txt)\" 2>&1 | tee -a $LOG_FILE" C-m
-else
-  # Use inline prompt
-  tmux send-keys -t "$TMUX_SESSION" "claude --model sonnet --dangerously-skip-permissions '$PROMPT_CONTENT' 2>&1 | tee -a $LOG_FILE" C-m
-fi
+# Send Claude command using file-based prompt (always)
+# Using -p flag with file input is most reliable for complex prompts
+tmux send-keys -t "$TMUX_SESSION" "claude -p \"\$(cat .claude-prompt.txt)\" --model sonnet --dangerously-skip-permissions 2>&1 | tee -a $LOG_FILE" C-m
 
 # Wait a moment then check if agent started
 sleep 2

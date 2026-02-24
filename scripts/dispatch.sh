@@ -175,8 +175,9 @@ while [ "$SPAWNED_COUNT" -lt "$AVAILABLE_SLOTS" ]; do
       log "✓ Agent spawned successfully"
     else
       log "✗ Failed to spawn agent for $TASK_ID"
-      # Don't remove from queue on spawn failure - it will be retried next dispatch
-      continue
+      log "  Leaving task in queue — will retry on next dispatch cycle"
+      # CRITICAL: break, don't continue — otherwise we retry the same task infinitely
+      break
     fi
   fi
   
