@@ -1,0 +1,50 @@
+## Task: {{TASK_DESCRIPTION}}
+
+You are working in a git worktree of the **{{REPO}}** repository, on branch **{{BRANCH}}**.
+
+### Project Context
+
+{{PROJECT_DOCS}}
+
+### Repository Structure
+
+{{REPO_STRUCTURE}}
+
+### Recent Changes
+
+{{GIT_LOG}}
+
+{{GIT_DIFF_STAT}}
+
+### Tech Stack
+
+{{TECH_STACK}}
+
+### Coding Conventions
+
+{{CONVENTIONS}}
+
+{{OBSIDIAN_NOTES}}
+
+### What to do
+
+{{TASK_DETAILS}}
+
+### Completion Checklist
+
+1. **Test your changes** — run the test suite and verify functionality
+2. **Stage and commit** with a conventional commit message:
+   ```bash
+   git add .
+   git commit -m "{{COMMIT_PREFIX}}: {{COMMIT_SUMMARY}}"
+   ```
+3. **Push to remote**:
+   ```bash
+   git push -u origin HEAD
+   ```
+4. **Create a Pull Request** targeting {{DEFAULT_BRANCH}}:
+   ```bash
+   gh pr create --repo {{OWNER}}/{{REPO}} --base {{DEFAULT_BRANCH}} --head {{BRANCH}} --title "{{COMMIT_PREFIX}}: {{COMMIT_SUMMARY}}" --body "{{PR_BODY}}"
+   ```
+
+Work methodically. Test thoroughly. Document as you go.

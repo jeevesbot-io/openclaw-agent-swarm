@@ -16,3 +16,5 @@ test-results/
 
 # OS
 .DS_Store
+state/
+suggestions/

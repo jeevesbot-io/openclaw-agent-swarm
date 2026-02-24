@@ -31,6 +31,33 @@ log "=== Swarm Monitor Started ==="
 # --- Error handling ---
 trap 'log "ERROR: Monitor failed at line $LINENO"; exit 1' ERR
 
+# --- 0. Run proactive work scanners (every 6 hours) ---
+LAST_SCAN_FILE="$SWARM_DIR/state/last-full-scan"
+SCAN_INTERVAL=21600  # 6 hours in seconds
+SHOULD_SCAN=false
+
+if [ ! -f "$LAST_SCAN_FILE" ]; then
+  SHOULD_SCAN=true
+  log "No previous scan found, running initial scan"
+elif [ $(($(date +%s) - $(cat "$LAST_SCAN_FILE"))) -gt $SCAN_INTERVAL ]; then
+  SHOULD_SCAN=true
+  LAST_SCAN=$(cat "$LAST_SCAN_FILE")
+  ELAPSED_HOURS=$(( ($(date +%s) - LAST_SCAN) / 3600 ))
+  log "Last scan was ${ELAPSED_HOURS}h ago, running proactive scan"
+fi
+
+if [ "$SHOULD_SCAN" = true ]; then
+  log "Running proactive work scanners..."
+  if [ "$DRY_RUN" = true ]; then
+    log "[DRY-RUN] Would run: scripts/scan-all.sh"
+  else
+    "$SCRIPTS_DIR/scan-all.sh" || {
+      log "WARNING: Proactive scan failed, continuing..."
+    }
+    date +%s > "$LAST_SCAN_FILE"
+  fi
+fi
+
 # --- 1. Run check-agents.sh ---
 log "Running check-agents.sh..."
 CHECK_EXIT=0

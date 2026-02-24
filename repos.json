@@ -1,0 +1,94 @@
+{
+  "version": "1.0.0",
+  "repos": {
+    "MissionControls": {
+      "path": "/Users/jeeves/projects/MissionControls",
+      "defaultBranch": "main",
+      "owner": "jeevesbot-io",
+      "techStack": [
+        "vue",
+        "typescript",
+        "vite",
+        "python",
+        "fastapi",
+        "sqlalchemy"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:35Z"
+    },
+    "claude_jobhunt": {
+      "path": "/Users/jeeves/projects/claude_jobhunt",
+      "defaultBranch": "main",
+      "owner": "solstice035",
+      "techStack": [
+        "react",
+        "nextjs",
+        "typescript",
+        "python",
+        "fastapi",
+        "sqlalchemy",
+        "redis"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:35Z"
+    },
+    "footballdash": {
+      "path": "/Users/jeeves/projects/footballdash",
+      "defaultBranch": "main",
+      "owner": "solstice035",
+      "techStack": [
+        "react",
+        "typescript",
+        "vite",
+        "python"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:35Z"
+    },
+    "schoolEmailsMaster": {
+      "path": "/Users/jeeves/projects/schoolEmailsMaster",
+      "defaultBranch": "main",
+      "owner": "solstice035",
+      "techStack": [
+        "typescript",
+        "python",
+        "fastapi",
+        "sqlalchemy"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:35Z"
+    },
+    "sports-dashboard": {
+      "path": "/Users/jeeves/projects/sports-dashboard",
+      "defaultBranch": "dev",
+      "owner": "jeevesbot-io",
+      "techStack": [
+        "vue",
+        "typescript",
+        "vite",
+        "python",
+        "fastapi",
+        "sqlalchemy"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:36Z"
+    },
+    "the-foundry": {
+      "path": "/Users/jeeves/projects/the-foundry",
+      "defaultBranch": "main",
+      "owner": "jeevesbot-io",
+      "techStack": [
+        "python"
+      ],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:36Z"
+    }
+  },
+  "lastScanned": "2026-02-24T22:42:36Z"
+}

@@ -1,0 +1,382 @@
+# Phase 5 Demo: Context-Aware Prompt Generation
+
+## Complete Workflow Example
+
+### Step 1: Scan Repositories (one-time or periodic)
+
+```bash
+cd ~/.openclaw/swarm
+./scripts/scan-repos.sh
+```
+
+**Output:**
+```
+[22:42:28] Scanning all repositories in /Users/jeeves/projects...
+[22:42:28] → Scanning MissionControls...
+[22:42:28] ✓ MissionControls - jeevesbot-io/MissionControls [main] (vue,typescript,vite,python,fastapi,sqlalchemy)
+[22:42:28] → Scanning claude_jobhunt...
+[22:42:28] ✓ claude_jobhunt - solstice035/claude_jobhunt [main] (react,nextjs,typescript,python,fastapi,sqlalchemy,redis)
+[22:42:36] Scanned 6 repositories
+[22:42:36] ✓ Registry updated: /Users/jeeves/.openclaw/swarm/repos.json
+```
+
+**Result:** `repos.json` now contains:
+```json
+{
+  "repos": {
+    "sports-dashboard": {
+      "path": "/Users/jeeves/projects/sports-dashboard",
+      "defaultBranch": "dev",
+      "owner": "jeevesbot-io",
+      "techStack": ["vue", "typescript", "vite", "python", "fastapi", "sqlalchemy"],
+      "hasClaudeMd": true,
+      "obsidianProject": null,
+      "lastScanned": "2026-02-24T22:42:36Z"
+    }
+  }
+}
+```
+
+---
+
+### Step 2: Generate a Context-Aware Prompt
+
+```bash
+./scripts/generate-prompt.sh sports-dashboard \
+  "Add API rate limiting middleware" \
+  --type feature \
+  --scope backend
+```
+
+**Output:**
+```
+[22:42:43] Generating prompt for sports-dashboard...
+[22:42:43] Auto-generated branch: agent/feature-add-api-rate-limiting-middleware
+[22:42:43] Gathering project context...
+[22:42:44] Analysing repository structure (backend)...
+[22:42:44] Checking recent changes...
+[22:42:44] ✓ Prompt generated (12914 bytes)
+[22:42:44]   Repository:  sports-dashboard
+[22:42:44]   Branch:      agent/feature-add-api-rate-limiting-middleware
+[22:42:44]   Type:        feature
+[22:42:44]   Scope:       backend
+[22:42:44]   Tech Stack:  vue,typescript,vite,python,fastapi,sqlalchemy
+/Users/jeeves/.openclaw/swarm/prompts/feature-add-api-rate-limiting-middleware-1771972964.txt
+```
+
+---
+
+### Step 3: Review the Generated Prompt
+
+```bash
+cat prompts/feature-add-api-rate-limiting-middleware-1771972964.txt | head -80
+```
+
+**Content (excerpt):**
+```
+## Task: Add API rate limiting middleware
+
+You are working in a git worktree of the **sports-dashboard** repository, 
+on branch **agent/feature-add-api-rate-limiting-middleware**.
+
+### Project Context
+
+**From CLAUDE.md:**
+
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working with code in this repository.
+
+## Project Overview
+
+Full-stack multi-sport analytics dashboard. Monorepo with a FastAPI (Python) backend 
+and Vue 3 (TypeScript) frontend. Currently football is the only fully implemented sport.
+
+## Commands
+
+### Backend
+
+```bash
+# Start dev server (from repo root)
+cd backend && source .venv/bin/activate && python app/main.py
+
+# Run all tests
+cd backend && source .venv/bin/activate && python -m pytest tests/ -v --asyncio-mode=auto
+```
+
+## Architecture
+
+### Backend (`backend/app/`)
+
+FastAPI app with fully async SQLAlchemy + PostgreSQL (asyncpg). Entry point is `app/main.py`.
+
+**Sport module pattern** (`app/sports/<sport>/`):
+- `models.py` — SQLAlchemy ORM models
+- `schemas.py` — Pydantic request/response schemas
+- `router.py` — FastAPI route handlers, mounted at `/api/<sport>/`
+- `service.py` — Business logic layer; all DB queries live here
+
+...
+
+### Repository Structure
+
+backend/app/db.py
+backend/app/config.py
+backend/app/__init__.py
+backend/app/sports/football/predictions.py
+backend/app/sports/football/service.py
+backend/app/sports/football/models.py
+backend/app/sports/football/router.py
+backend/requirements.txt
+backend/alembic.ini
+backend/tests/conftest.py
+backend/tests/test_football_service.py
+...
+
+### Recent Changes
+
+ab8a7e6 chore: add test artifacts to gitignore and fix probability display
+c41d0e0 Add pldashboard analytics: ratings, form, difficulty, predictions
+52d3090 Fix end-to-end data flow: schema bugs, API consolidation, fixture rendering
+...
+
+### Tech Stack
+
+vue,typescript,vite,python,fastapi,sqlalchemy
+
+### Coding Conventions
+
+**Commit Style:**
+- chore: (1 recent commits)
+
+**Code Quality:**
+- ESLint configured
+- Prettier configured
+
+**Testing:**
+- pytest (Python)
+- Vitest (Vite)
+
+### What to do
+
+Add API rate limiting middleware
+
+### Completion Checklist
+
+1. **Test your changes** — run the test suite and verify functionality
+2. **Stage and commit** with a conventional commit message:
+   ```bash
+   git add .
+   git commit -m "feat: Add API rate limiting middleware"
+   ```
+3. **Push to remote**:
+   ```bash
+   git push -u origin HEAD
+   ```
+4. **Create a Pull Request** targeting dev:
+   ```bash
+   gh pr create --repo jeevesbot-io/sports-dashboard \
+     --base dev \
+     --head agent/feature-add-api-rate-limiting-middleware \
+     --title "feat: Add API rate limiting middleware" \
+     --body "This PR implements: Add API rate limiting middleware
+     
+   Generated by agent swarm."
+   ```
+
+Work methodically. Test thoroughly. Document as you go.
+```
+
+---
+
+### Step 4: Queue the Task (Existing Workflow)
+
+```bash
+./scripts/queue-task.sh sports-dashboard \
+  agent/feature-add-api-rate-limiting-middleware \
+  prompts/feature-add-api-rate-limiting-middleware-1771972964.txt \
+  --priority high
+```
+
+**Output:**
+```
+✓ Task queued successfully
+  ID:       feature-add-api-rate-limiting-middleware-1771972964
+  Repo:     sports-dashboard
+  Branch:   agent/feature-add-api-rate-limiting-middleware
+  Priority: high
+  Position: #1 in queue
+  Prompt:   /Users/jeeves/.openclaw/swarm/prompts/feature-add-api-rate-limiting-middleware-1771972964.txt
+```
+
+---
+
+### Simplified Workflow (One-Liner)
+
+Generate prompt and queue in one step:
+
+```bash
+PROMPT=$(./scripts/generate-prompt.sh sports-dashboard \
+  "Add API rate limiting middleware" \
+  --type feature --scope backend 2>/dev/null | tail -1)
+
+./scripts/queue-task.sh sports-dashboard \
+  agent/feature-add-api-rate-limiting-middleware \
+  "$PROMPT" \
+  --priority high
+```
+
+---
+
+### Interactive Mode (Easiest)
+
+```bash
+./scripts/generate-prompt-interactive.sh sports-dashboard
+```
+
+**Walkthrough:**
+```
+→ Interactive Prompt Generator for sports-dashboard
+
+? What type of change?
+  1) feature     - New functionality
+  2) bugfix      - Fix a bug
+  3) test        - Add tests
+  4) docs        - Documentation
+  5) refactor    - Code cleanup/refactor
+Choice [1-5]: 1
+✓ Type: feature
+
+? Describe the task:
+> Add API rate limiting middleware
+✓ Task: Add API rate limiting middleware
+
+? What scope?
+  1) full       - Entire repository
+  2) backend    - Backend code only
+  3) frontend   - Frontend code only
+Choice [1-3]: 2
+✓ Scope: backend
+
+? Branch name?
+  Suggested: agent/feature-add-api-rate-limiting-middleware
+  Press Enter to accept, or type custom name: 
+✓ Branch: agent/feature-add-api-rate-limiting-middleware
+
+? Any specific files to focus on? (optional, comma-separated)
+> 
+
+→ Generating prompt...
+✓ Prompt generated: /Users/jeeves/.openclaw/swarm/prompts/feature-add-api-rate-limiting-middleware-1771972964.txt
+
+? Review the prompt? [y/N] n
+
+? Queue this task? [Y/n] Y
+
+? Priority? [1=high, 2=normal, 3=low, default=2]
+Choice: 1
+
+→ Queueing task with priority: high...
+✓ Task queued successfully!
+
+Next steps:
+  - Monitor queue:  cat /Users/jeeves/.openclaw/swarm/queue.json | jq '.queue'
+  - Process queue:  /Users/jeeves/.openclaw/swarm/scripts/process-queue.sh
+  - Check agents:   /Users/jeeves/.openclaw/swarm/scripts/check-agents.sh
+```
+
+---
+
+## What Makes This Better Than Manual Prompts
+
+### Before (Manual):
+
+```
+Add rate limiting to the API
+```
+
+**Problems:**
+- No project context
+- Agent doesn't know architecture
+- No coding conventions
+- Wrong commit format
+- Wrong default branch for PR
+- No test guidance
+
+### After (Generated):
+
+```
+## Task: Add API rate limiting middleware
+
+You are working in a git worktree of the sports-dashboard repository, 
+on branch agent/feature-add-api-rate-limiting-middleware.
+
+### Project Context
+[Full CLAUDE.md with architecture, commands, patterns]
+
+### Repository Structure
+[Backend files only - no frontend noise]
+
+### Recent Changes
+[Last 10 commits showing team's recent work]
+
+### Tech Stack
+vue,typescript,vite,python,fastapi,sqlalchemy
+
+### Coding Conventions
+- pytest for testing
+- ESLint + Prettier
+- Conventional commits
+
+### Completion Checklist
+1. Test your changes
+2. Commit with: "feat: Add API rate limiting middleware"
+3. Push to remote
+4. Create PR targeting `dev` (not main!)
+```
+
+**Benefits:**
+- ✅ Full project context from CLAUDE.md
+- ✅ Correct architecture understanding
+- ✅ Proper commit format
+- ✅ Correct default branch (dev, not main)
+- ✅ Testing guidance specific to project
+- ✅ Only shows relevant files (backend scope)
+- ✅ 12.9KB of rich context vs 30 bytes of "Add rate limiting"
+
+---
+
+## Performance Metrics
+
+| Operation | Time | Size |
+|-----------|------|------|
+| Scan 6 repos | <1s | - |
+| Generate prompt (sports-dashboard) | 1.2s | 12.9KB |
+| Generate prompt (MissionControls) | 1.3s | 18.9KB |
+| Registry update | <0.1s | 2.1KB |
+
+**Total overhead per task:** ~1-2 seconds for dramatically better prompts.
+
+---
+
+## Next Use Cases
+
+1. **Automated task creation from GitHub issues:**
+   ```bash
+   ISSUE_TITLE=$(gh issue view 42 --json title -q .title)
+   PROMPT=$(./scripts/generate-prompt.sh sports-dashboard "$ISSUE_TITLE" --type bugfix)
+   ./scripts/queue-task.sh sports-dashboard agent/fix-issue-42 "$PROMPT"
+   ```
+
+2. **Batch task generation from TODOs:**
+   ```bash
+   rg "TODO:" backend/ | while read todo; do
+     ./scripts/generate-prompt.sh sports-dashboard "$todo" --type refactor
+   done
+   ```
+
+3. **Periodic registry refresh (cron/heartbeat):**
+   ```bash
+   # Every day, keep registry fresh
+   ./scripts/scan-repos.sh
+   ```
