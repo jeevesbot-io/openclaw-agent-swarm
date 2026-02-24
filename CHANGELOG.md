@@ -5,10 +5,35 @@ All notable changes to OpenClaw Agent Swarm will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-24
+
+### Added — Phase 1: First Real Agent Runs
+- Sub-agent orchestration via OpenClaw sessions_spawn
+- Two successful agent runs:
+  1. README generation for sports-dashboard (PR #1) — via OpenClaw sub-agent
+  2. Prediction module tests for sports-dashboard — via swarm pipeline (spawn-agent.sh → tmux → Claude Code CLI)
+- PHASE1-TEST-PLAN.md — TDD test plan with 8 tests and 6 failure scenarios
+- PHASE1-READY.md — Readiness confirmation after gap fixes
+- JEEVES-INTEGRATION.md — Complete orchestration workflow documentation
+- test-registry-integration.sh — Registry update validation
+
+### Fixed
+- **Task registry integration** (CRITICAL) — spawn-agent.sh now updates active-tasks.json
+- **macOS file locking** — Replaced Linux-only flock with mkdir-based atomic locking
+- **Large prompt handling** — Size detection with file-based fallback for >100KB prompts
+- **Claude model names** — Corrected from `anthropic/claude-sonnet-4` (OpenRouter format) to `sonnet` alias (Claude CLI format)
+- **Model version** — Updated from Sonnet 4 to Sonnet 4.6 (current)
+
+### Key Learnings
+- Claude Code CLI uses aliases (`sonnet`, `opus`, `haiku`) not `anthropic/` prefixed names
+- OAuth tokens expire — need periodic `claude auth login`
+- `flock` doesn't exist on macOS — use `mkdir` for atomic locking
+- OpenClaw sub-agents can orchestrate swarm scripts effectively
+- Prompt quality directly determines agent output quality
+
 ## [0.1.0] - 2026-02-24
 
-### Added
-- Initial Phase 0 implementation
+### Added — Phase 0: Foundation
 - Core scripts: spawn-agent, check-agents, cleanup-agents, respawn-agent
 - Task registry with JSON state tracking
 - Git worktree isolation per agent
@@ -25,36 +50,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation (32KB across 6 files)
 
 ### Fixed
-- 13 bugs discovered during validation
-- 12 bugs fixed (92% fix rate)
-- All critical/high/medium/low priority issues resolved
-
-### Documentation
-- README.md - GitHub introduction
-- README-OPERATIONS.md - Operational documentation
-- PHASE0-FINAL-SUMMARY.md - Complete implementation details
-- ALL-BUGS-FIXED.md - Bug tracking and fixes
-- BUGS-FOUND.md - Initial bug discovery
-- BUGS-FIXED.md - Critical/high priority fixes
-
-### Testing
-- test-all-fixes.sh - Comprehensive validation (16 tests)
-- test-fixes.sh - Initial bug validation (6 tests)
-- test-spawn-dryrun.sh - End-to-end workflow test
-
-### Constraints
-- Tuned for 16GB RAM (max 2 parallel agents)
-- Estimated $155-355/month operating cost at steady state
+- 13 bugs discovered during validation, 12 fixed (92%)
 
 ## [Unreleased]
 
-### Planned for Phase 1
-- [ ] Single agent end-to-end real task
-- [ ] Prompt generation integration
-- [ ] Human review workflow
-
 ### Planned for Phase 2
 - [ ] Multi-model code reviews (Haiku/Sonnet/Opus via OpenRouter)
+- [ ] Review script (review-pr.sh)
 - [ ] Review result parsing and PR comments
 - [ ] Cost tracking per task
 
