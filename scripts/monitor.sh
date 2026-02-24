@@ -49,7 +49,19 @@ if [ $CHECK_EXIT -gt 11 ]; then
   exit 1
 fi
 
-# --- 2. Parse registry for tasks needing action ---
+# --- 2. Dispatch queued tasks if slots available ---
+log "Running dispatch.sh..."
+if [ "$DRY_RUN" = true ]; then
+  "$SCRIPTS_DIR/dispatch.sh" --dry-run || {
+    log "WARNING: dispatch.sh failed, continuing..."
+  }
+else
+  "$SCRIPTS_DIR/dispatch.sh" || {
+    log "WARNING: dispatch.sh failed, continuing..."
+  }
+fi
+
+# --- 3. Parse registry for tasks needing action ---
 if [ ! -f "$REGISTRY" ]; then
   log "ERROR: Registry not found at $REGISTRY"
   exit 1
@@ -66,7 +78,7 @@ fi
 # Initialize notifications array
 declare -a NOTIFICATIONS=()
 
-# --- 3. Review PRs that haven't been reviewed yet ---
+# --- 4. Review PRs that haven't been reviewed yet ---
 log "Checking for PRs needing review..."
 NEEDS_REVIEW=$(jq -r '[.tasks[] | select(.status == "pr_created" or .status == "ready_for_review") | select(.checks.reviewed != true)] | length' "$REGISTRY")
 log "Found $NEEDS_REVIEW PR(s) needing review"
@@ -131,7 +143,7 @@ if [ "$NEEDS_REVIEW" -gt 0 ]; then
   done
 fi
 
-# --- 4. Check for stuck agents ---
+# --- 5. Check for stuck agents ---
 log "Checking for stuck agents..."
 STUCK_COUNT=$(jq -r '[.tasks[] | select(.status == "stuck") | select(.checks.notified != true)] | length' "$REGISTRY")
 log "Found $STUCK_COUNT stuck agent(s)"
@@ -174,7 +186,7 @@ if [ "$STUCK_COUNT" -gt 0 ]; then
   done
 fi
 
-# --- 5. Check for permanently failed agents ---
+# --- 6. Check for permanently failed agents ---
 log "Checking for permanently failed agents..."
 FAILED_COUNT=$(jq -r '[.tasks[] | select(.status == "failed_max_attempts") | select(.checks.notified != true)] | length' "$REGISTRY")
 log "Found $FAILED_COUNT permanently failed agent(s)"
@@ -215,7 +227,7 @@ if [ "$FAILED_COUNT" -gt 0 ]; then
   done
 fi
 
-# --- 6. Respawn failed agents ---
+# --- 7. Respawn failed agents ---
 log "Checking for agents needing respawn..."
 RESPAWN_COUNT=$(jq -r '[.tasks[] | select(.needsRespawn == true)] | length' "$REGISTRY")
 log "Found $RESPAWN_COUNT agent(s) needing respawn"
@@ -252,7 +264,7 @@ if [ "$RESPAWN_COUNT" -gt 0 ]; then
   done
 fi
 
-# --- 7. Write notifications ---
+# --- 8. Write notifications ---
 if [ ${#NOTIFICATIONS[@]} -gt 0 ]; then
   log "Writing ${#NOTIFICATIONS[@]} notification(s) to $NOTIFICATIONS_FILE"
   
