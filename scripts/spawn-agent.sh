@@ -202,10 +202,10 @@ fi
 # Send Claude command based on prompt size
 if [ "$PROMPT_METHOD" = "file" ]; then
   # Use heredoc to avoid shell argument limits
-  tmux send-keys -t "$TMUX_SESSION" "claude --model anthropic/claude-sonnet-4 --dangerously-skip-permissions \"\$(cat .claude-prompt.txt)\" 2>&1 | tee -a $LOG_FILE" C-m
+  tmux send-keys -t "$TMUX_SESSION" "claude --model claude-sonnet-4-20250514 --dangerously-skip-permissions \"\$(cat .claude-prompt.txt)\" 2>&1 | tee -a $LOG_FILE" C-m
 else
   # Use inline prompt
-  tmux send-keys -t "$TMUX_SESSION" "claude --model anthropic/claude-sonnet-4 --dangerously-skip-permissions '$PROMPT_CONTENT' 2>&1 | tee -a $LOG_FILE" C-m
+  tmux send-keys -t "$TMUX_SESSION" "claude --model claude-sonnet-4-20250514 --dangerously-skip-permissions '$PROMPT_CONTENT' 2>&1 | tee -a $LOG_FILE" C-m
 fi
 
 # Wait a moment then check if agent started
