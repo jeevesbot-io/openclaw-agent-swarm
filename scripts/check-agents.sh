@@ -12,13 +12,21 @@ exec 2>&1
 echo "=== check-agents.sh started at $(date) ==="
 
 REGISTRY="$HOME/.openclaw/swarm/active-tasks.json"
-LOCKFILE="$HOME/.openclaw/swarm/active-tasks.lock"
+LOCKDIR="$HOME/.openclaw/swarm/active-tasks.lock.d"
 TEMP_REGISTRY=$(mktemp)
 
-# Acquire lock to prevent concurrent modifications
-exec 200>"$LOCKFILE"
-if ! flock -n 200; then
-  echo "ERROR: Another instance is already running (lockfile: $LOCKFILE)"
+# Acquire lock to prevent concurrent modifications (mkdir is atomic)
+LOCK_ACQUIRED=false
+for i in {1..50}; do
+  if mkdir "$LOCKDIR" 2>/dev/null; then
+    LOCK_ACQUIRED=true
+    break
+  fi
+  sleep 0.1
+done
+
+if [ "$LOCK_ACQUIRED" = false ]; then
+  echo "ERROR: Another instance is already running, could not acquire lock after 5s"
   exit 2
 fi
 
@@ -149,7 +157,7 @@ echo "  Failed: $FAILED"
 echo "  Needs respawn: $NEEDS_RESPAWN"
 
 # Release lock
-flock -u 200
+rmdir "$LOCKDIR" 2>/dev/null || true
 
 # Return exit code indicating if action needed
 if [ $NEEDS_REVIEW -gt 0 ] || [ $STUCK -gt 0 ] || [ $FAILED -gt 0 ]; then

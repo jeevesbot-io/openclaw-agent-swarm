@@ -169,8 +169,22 @@ if [ -f "requirements.txt" ]; then
   pip install -r requirements.txt 2>&1 | tee -a "$LOG_FILE"
 fi
 
-# Read prompt file (escape quotes for shell)
-PROMPT_CONTENT=$(cat "$PROMPT_FILE" | sed "s/'/'\\\\''/g")
+# Read prompt file
+PROMPT_SIZE=$(wc -c < "$PROMPT_FILE")
+echo "Prompt size: $PROMPT_SIZE bytes"
+
+# Check if prompt is too large for shell argument (>100KB as safe limit)
+if [ "$PROMPT_SIZE" -gt 102400 ]; then
+  echo "⚠️  Large prompt detected (>100KB), using file-based approach"
+  # Copy prompt to worktree
+  WORKTREE_PROMPT="$WORKTREE_DIR/.claude-prompt.txt"
+  cp "$PROMPT_FILE" "$WORKTREE_PROMPT"
+  PROMPT_METHOD="file"
+else
+  # Escape quotes for shell
+  PROMPT_CONTENT=$(cat "$PROMPT_FILE" | sed "s/'/'\\\\''/g")
+  PROMPT_METHOD="inline"
+fi
 
 # Create the tmux session with Claude Code
 echo "Spawning Claude Code agent in tmux session: $TMUX_SESSION"
@@ -185,7 +199,14 @@ if [ -n "$VENV_PATH" ]; then
   tmux send-keys -t "$TMUX_SESSION" "source $VENV_PATH" C-m
 fi
 
-tmux send-keys -t "$TMUX_SESSION" "claude --model anthropic/claude-sonnet-4 --dangerously-skip-permissions '$PROMPT_CONTENT' 2>&1 | tee -a $LOG_FILE" C-m
+# Send Claude command based on prompt size
+if [ "$PROMPT_METHOD" = "file" ]; then
+  # Use heredoc to avoid shell argument limits
+  tmux send-keys -t "$TMUX_SESSION" "claude --model anthropic/claude-sonnet-4 --dangerously-skip-permissions \"\$(cat .claude-prompt.txt)\" 2>&1 | tee -a $LOG_FILE" C-m
+else
+  # Use inline prompt
+  tmux send-keys -t "$TMUX_SESSION" "claude --model anthropic/claude-sonnet-4 --dangerously-skip-permissions '$PROMPT_CONTENT' 2>&1 | tee -a $LOG_FILE" C-m
+fi
 
 # Wait a moment then check if agent started
 sleep 2
@@ -193,12 +214,78 @@ if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
   # Success - disable error trap
   trap - ERR
   
+  # Add task to registry
+  REGISTRY="$HOME/.openclaw/swarm/active-tasks.json"
+  LOCKDIR="$HOME/.openclaw/swarm/active-tasks.lock.d"
+  
+  # Acquire lock (mkdir is atomic on Unix)
+  LOCK_ACQUIRED=false
+  for i in {1..50}; do
+    if mkdir "$LOCKDIR" 2>/dev/null; then
+      LOCK_ACQUIRED=true
+      break
+    fi
+    sleep 0.1
+  done
+  
+  if [ "$LOCK_ACQUIRED" = false ]; then
+    echo "⚠️  Could not acquire registry lock after 5s, task not added to registry"
+    echo "   Task is running but won't be monitored by check-agents.sh"
+  else
+    # Add task to registry
+    TEMP_REGISTRY=$(mktemp)
+    jq --arg id "$TASK_ID" \
+       --arg repo "$REPO" \
+       --arg branch "$BRANCH" \
+       --arg worktree "$WORKTREE_DIR" \
+       --arg session "$TMUX_SESSION" \
+       --argjson startedAt "$(date +%s)000" \
+       --arg prompt "$PROMPT_FILE" \
+       '.tasks += [{
+         id: $id,
+         repo: $repo,
+         branch: $branch,
+         worktree: $worktree,
+         tmuxSession: $session,
+         agent: "claude-code",
+         model: .config.defaultModel,
+         description: "",
+         prompt: $prompt,
+         priority: "normal",
+         status: "running",
+         startedAt: $startedAt,
+         lastChecked: null,
+         attempts: 1,
+         maxAttempts: .config.maxAttempts,
+         notifyOnComplete: .config.notifyOnComplete,
+         pr: null,
+         checks: {
+           prCreated: false,
+           ciPassed: false,
+           reviewsPassed: false
+         }
+       }]' "$REGISTRY" > "$TEMP_REGISTRY"
+    
+    if [ $? -eq 0 ]; then
+      mv "$TEMP_REGISTRY" "$REGISTRY"
+      echo "✓ Task added to registry"
+    else
+      echo "✗ Failed to update registry (jq error)"
+      rm -f "$TEMP_REGISTRY"
+    fi
+    
+    # Release lock
+    rmdir "$LOCKDIR"
+  fi
+  
   echo "✓ Agent spawned successfully"
   echo "  Worktree: $WORKTREE_DIR"
   echo "  Session:  $TMUX_SESSION"
   echo "  Log:      $LOG_FILE"
+  echo "  Registry: $REGISTRY"
   echo ""
   echo "Monitor with: tmux attach -t $TMUX_SESSION"
+  echo "Check status: ~/.openclaw/swarm/scripts/check-agents.sh"
 else
   echo "✗ Failed to spawn agent"
   exit 1

@@ -1,6 +1,7 @@
 # Runtime state (don't commit active task state)
 active-tasks.json
 active-tasks.lock
+active-tasks.lock.d/
 
 # Logs (contain execution traces)
 logs/
