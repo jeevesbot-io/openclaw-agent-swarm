@@ -43,7 +43,7 @@ fi
 
 if [ "$TASK_COUNT" -eq 0 ]; then
   echo "No active agents to check"
-  flock -u 200
+  rmdir "$LOCKDIR" 2>/dev/null || true
   exit 0
 fi
 
